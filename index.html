@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Computer Vision Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        .card {
+            width: 90%;
+            max-width: 800px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            margin-bottom: 30px;
+            width: 100%;
+        }
+
+        .header textarea {
+            width: 100%;
+            height: 100%;
+            padding: 15px;
+            border: 2px solid #008CBA;
+            border-radius: 8px;
+            box-sizing: border-box;
+            resize: none;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+            outline: none;
+            transition: border-color 0.5s ease;
+            text-align: center;
+        }
+
+        
+
+        .image-container {
+            width: 100%;
+            height: 300px;
+            background-color: transparent;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            border: 2px solid #008CBA;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .footer {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: background-color 0.5s ease;
+            outline: none;
+        }
+
+        .footer button.import {
+            background: linear-gradient(45deg, #4CAF50, #008CBA);
+            color: white;
+        }
+
+        .footer button.import:hover {
+            background: linear-gradient(45deg, #45a049, #007095);
+            outline: none;
+        }
+
+        .footer button.submit {
+            background: linear-gradient(45deg, #008CBA, #4CAF50);
+            color: white;
+        }
+
+        .footer button.submit:hover {
+            background: linear-gradient(45deg, #007095, #45a049);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="header">
+            <textarea id="textInput" placeholder="Please press Import to upload your image and press Predict to predict your image!" disabled></textarea>
+        </div>
+        <div class="image-container" id="imageContainer">
+            <!-- Placeholder for the uploaded image -->
+        </div>
+        <div class="footer">
+            <input type="file" id="imageInput" style="display: none;">
+            <button class="import" onclick="document.getElementById('imageInput').click();">Import</button>
+            <button class="submit" onclick="displayText()">Submit</button>
+        </div>
+    </div>
+
+    <script>
+        var file = null;
+
+        function displayText() {
+            var textInput = document.getElementById('textInput');
+
+            var formData = new FormData();
+            formData.append('file', file);
+            var url = 'http://localhost:5000/api/predict';
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', url, true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        var response = JSON.parse(xhr.responseText);
+                        var predictions = response.predictions;
+                        console.log('File uploaded successfully:', predictions);
+                        var index = 0;
+                        var interval = setInterval(function () {
+                            if (index < predictions.length) {
+                                textInput.value += predictions[index];
+                                index++;
+                            } else {
+                                clearInterval(interval);
+                            }
+                        }, 30);
+                    } else {
+                        console.error('File upload failed:', xhr.statusText);
+                    }
+                }
+            };
+            xhr.send(formData);
+        }
+
+        document.getElementById('imageInput').addEventListener('change', function (event) {
+            file = event.target.files[0];
+            var imageContainer = document.getElementById('imageContainer');
+            var reader = new FileReader();
+
+            reader.onload = function (event) {
+                var img = document.createElement('img');
+                img.src = event.target.result;
+                imageContainer.innerHTML = '';
+                imageContainer.appendChild(img);
+            };
+
+            reader.readAsDataURL(file);
+
+            var textInput = document.getElementById('textInput');
+            textInput.value = "";
+        });
+    </script>
+</body>
+
+</html>
